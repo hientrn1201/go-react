@@ -49,6 +49,14 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 	dec.DisallowUnknownFields()
 
 	err := dec.Decode(data)
+	if err != nil {
+		return err
+	}
+
+	// attempts to decode another JSON value after decode the first JSON to data pointer
+	err = dec.Decode(&struct{}{})
+
+	//legit body will return EOF error, otherwise this body contains more than one JSON value
 	if err != io.EOF {
 		return errors.New("body must only contain one JSON value")
 	}
