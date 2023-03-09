@@ -15,21 +15,26 @@ type JSONResponse struct {
 
 // interface{} means that data can take any kind of type
 
-// function that decode the message into JSON and response
+// helper function to write JSON response and handle any possible error
 func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+	//convert data to JSON
 	out, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
+	// add any existing header to the response header
 	if len(headers) > 0 {
 		for key, value := range headers[0] {
 			w.Header()[key] = value
 		}
 	}
 
+	// complete header set up for the response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+
+	// finally write the JSON to the response
 	_, err = w.Write(out)
 
 	if err != nil {
@@ -39,15 +44,17 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data interf
 	return nil
 }
 
-// function to read JSON message from the request
+// helper function to read JSON from requests and handle any possible error
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	maxBytes := 1024 * 1024 //limit to 1 megabytes
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
+	// create a new decoder that read r.Body
 	dec := json.NewDecoder(r.Body)
 
 	dec.DisallowUnknownFields()
 
+	// use the decoder to read from r.Body, store JSON value to data pointer variable
 	err := dec.Decode(data)
 	if err != nil {
 		return err
@@ -64,16 +71,21 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 	return nil
 }
 
-// function that specifies errors in JSON
+// helper function to format error when writing and reading JSON
 func (app *application) errorJSON(w http.ResponseWriter, err error, status ...int) error {
+	// set default status code to 400 - bad request
 	statusCode := http.StatusBadRequest
+
+	// if other error code provided, change to that
 	if len(status) > 0 {
 		statusCode = status[0]
 	}
 
+	// create JSON error instance from JSONResponse object
 	var payload JSONResponse
 	payload.Error = true
 	payload.Message = err.Error()
 
+	// write error in JSON to the response
 	return app.writeJSON(w, statusCode, payload)
 }
