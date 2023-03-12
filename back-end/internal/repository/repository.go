@@ -14,4 +14,7 @@ type DatabaseRepo interface {
 
 	//query user by email
 	GetUserByEmail(email string) (*models.User, error)
+
+	//query user by id
+	GetUserByID(id int) (*models.User, error)
 }

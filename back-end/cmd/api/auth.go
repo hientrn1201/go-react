@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -92,8 +94,8 @@ func (j *Auth) GenerateTokenPair(user *jwtUser) (TokenPairs, error) {
 func (j *Auth) GetRefreshCookie(refreshToken string) *http.Cookie {
 	return &http.Cookie{
 		Name:     j.CookieName,
-		Path:     j.CookiePath, // specifies the subset of URLs within the domain that the cookie applies to
-		Value:    refreshToken,
+		Path:     j.CookiePath,                          // specifies the subset of URLs within the domain that the cookie applies to
+		Value:    refreshToken,                          // value of cookie contains the encrypted jwt refresh token
 		Expires:  time.Now().UTC().Add(j.RefreshExpiry), // provides an absolute duration (use for older browsers)
 		MaxAge:   int(j.RefreshExpiry.Seconds()),        // provides a relative duration of expiration
 		SameSite: http.SameSiteStrictMode,
@@ -116,4 +118,58 @@ func (j *Auth) GetExpiredRefreshCookie() *http.Cookie {
 		HttpOnly: true,
 		Secure:   true,
 	}
+}
+
+func (j *Auth) GetTokenFromHeaderAndVerify(w http.ResponseWriter, r *http.Request) (string, *Claims, error) {
+	w.Header().Add("Vary", "Authorization")
+
+	// get auth header
+	authHeader := r.Header.Get("Authorization")
+
+	// sanity check whether authHeader exists
+
+	if authHeader == "" {
+		return "", nil, errors.New("no auth header")
+	}
+
+	// split the header on spaces
+	headerParts := strings.Split(authHeader, " ")
+
+	// auth headers have exactly 2 parts
+	if len(headerParts) != 2 {
+		return "", nil, errors.New("invalid auth header")
+	}
+
+	// check to see if we ahve the word Bearer
+	if headerParts[0] != "Bearer" {
+		return "", nil, errors.New("invalid auth header")
+	}
+
+	token := headerParts[1]
+
+	// declare an empty claims
+	claims := &Claims{}
+
+	//parse the token
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(j.Secret), nil
+	})
+
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "token is expired by") {
+			return "", nil, errors.New("expired token")
+		}
+		return "", nil, err
+	}
+
+	// check if this token is issued by us
+	if claims.Issuer != j.Issuer {
+		return "", nil, errors.New("invalid issuer")
+	}
+
+	return token, claims, nil
 }

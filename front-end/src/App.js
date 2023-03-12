@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import Alert from './components/Alert';
 
@@ -7,12 +7,83 @@ function App() {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertClassname, setAlertClassName] = useState('d-none');
 
+  const [tickInterval, setTickInterval] = useState();
+
   const navigate = useNavigate();
+
+  // check if the user is logged in
+  // if yes, start interval of 10 mins to use refresh Token to auto authenticate users
+  // if not or logged out, clear the interval
+  const toggleRefresh = useCallback((status) => {
+    console.log("clicked");
+
+    if (status) {
+      console.log("turning on ticking");
+      // auto reassign new JWT token after 10 mins
+      let i = setInterval(() => {
+        const requestOptions = {
+          method: "GET",
+          credentials: "include",
+        }
+  
+        fetch(`/refresh`, requestOptions)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.access_token) {
+              setJwtToken(data.access_token);
+            }
+          })
+          .catch(error => {
+            console.log("user is not logged in", error);
+          })
+      }, 600000)
+      setTickInterval(i);
+      console.log("setting tick interval to", i);
+    } else {
+      console.log("turning off ticking");
+      console.log("turning off tickInterval", tickInterval);
+      clearInterval(tickInterval);
+      setTickInterval(null);
+    }
+  }, [tickInterval])
   
   const logOut = () => {
-    setJwtToken("");
+    const requestOptions = {
+      method: "GET",
+      credentials: "include"
+    }
+    fetch(`/logout`, requestOptions)
+      .catch(error => {
+        console.log("error logging out", error);
+      })
+      .finally(() => {
+        setJwtToken("")
+        toggleRefresh(false)
+      })
     navigate("/login")
   }
+
+  useEffect(() => {
+    if (jwtToken === "") {
+      const requestOptions = {
+        method: "GET",
+        credentials: "include",
+      }
+
+      fetch(`/refresh`, requestOptions)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.access_token) {
+            setJwtToken(data.access_token);
+            toggleRefresh(true);
+          }
+        })
+        .catch(error => {
+          console.log("user is not logged in", error);
+        })
+    }
+  }, [jwtToken, toggleRefresh])
+
   return (
     <div className="container">
       <div className="row">
@@ -47,13 +118,13 @@ function App() {
           </nav>
         </div>
         <div className="col-md-10">
-            <Alert 
-              message={alertMessage}
-              className={alertClassname}
-            />
-            <Outlet context={{
-              jwtToken, setJwtToken, setAlertClassName, setAlertMessage
-            }} />
+          <Alert 
+            message={alertMessage}
+            className={alertClassname}
+          />
+          <Outlet context={{
+            jwtToken, setJwtToken, setAlertClassName, setAlertMessage, toggleRefresh
+          }} />
         </div>
       </div>
     </div>
