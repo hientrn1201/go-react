@@ -59,6 +59,7 @@ const router = createBrowserRouter(
       <Route path='movies/:id' element={<Movie />}></Route>
       <Route path='genres' element={<Genres />}></Route>
       <Route path='admin/movie/0' element={<EditMovie />}></Route>
+      <Route path='admin/movie/:id' element={<EditMovie />}></Route>
       <Route path='manage-catalogue' element={<ManageCatalogue />}></Route>
       <Route path='/graphql' element={<GraphQL />}></Route>
       <Route path='/login' element={<Login />}></Route>
