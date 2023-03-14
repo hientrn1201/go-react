@@ -12,7 +12,7 @@ const TextArea = (props) => {
         onChange={props.onChange}
         rows={props.rows}
       />
-      <div className={props.errorDiv}>{props.errorMessage}</div>
+      <div className={props.errorDiv}>{props.errorMsg}</div>
     </div>
   )
 }
