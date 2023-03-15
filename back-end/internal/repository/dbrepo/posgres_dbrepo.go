@@ -298,3 +298,31 @@ func (m *PostgresDBRepo) AllGenres() ([]*models.Genre, error) {
 	}
 	return genres, nil
 }
+
+func (m *PostgresDBRepo) InsertMovie(movie models.Movie) (int, error) {
+	//you have a limited time with the context before time out
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `insert into movies (title, description, release_data, runtime,
+					mpaa_rating, created_at, updated_at, image
+					value ($1, $2, $3, $4, $5, $6, $7, $8) returning id`
+
+	var newID int
+
+	err := m.DB.QueryRowContext(ctx, stmt,
+		movie.Title,
+		movie.Description,
+		movie.ReleaseDate,
+		movie.RunTime,
+		movie.MPAARating,
+		movie.CreateAt,
+		movie.UpdatedAt,
+		movie.Image,
+	).Scan(&newID)
+
+	if err != nil {
+		return 0, err
+	}
+	return newID, nil
+}
