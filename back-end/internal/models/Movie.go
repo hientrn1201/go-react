@@ -13,7 +13,7 @@ type Movie struct {
 	CreateAt    time.Time `json:"-"`
 	UpdatedAt   time.Time `json:"-"`
 	Genres      []*Genre  `json:"genres,omitempty"`
-	GenresArray []int     `json:"genres_array,omitempty`
+	GenresArray []int     `json:"genres_array,omitempty"`
 }
 
 //"-" means that dont include in JSON

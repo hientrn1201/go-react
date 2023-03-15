@@ -14,8 +14,7 @@ const ManageCatalogue = () => {
         const headers = new Headers();
         headers.append("Content-Type", "application/json");
         headers.append("Authorization", "Bearer " + jwtToken);
-        console.log("im in manage catalogue and ", jwtToken);
-
+        
         const requestOptions = {
             method: "GET",
             headers: headers
@@ -36,7 +35,7 @@ const ManageCatalogue = () => {
         <div>
             <h2>Manage Catalogue</h2>
             <hr />
-            <table className="table talbe-striped table-hover">
+            <table className="table table-striped table-hover">
                 <thead>
                     <tr>
                         <th>Movie</th>

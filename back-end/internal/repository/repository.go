@@ -29,4 +29,10 @@ type DatabaseRepo interface {
 
 	// insert one movie
 	InsertMovie(movie models.Movie) (int, error)
+
+	//update movie
+	UpdateMovie(movie models.Movie) error
+
+	//update movie genres id list
+	UpdateMovieGenres(id int, genreIDs []int) error
 }

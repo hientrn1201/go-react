@@ -89,6 +89,45 @@ const EditMovie = () => {
                 .catch(err => {
                     console.log(err);
                 })
+        } else {
+            // populate existing data to edit movie
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+            headers.append("Authorization", "Bearer "+ jwtToken);
+
+            const requestOptions = {
+                method: "GET",
+                headers: headers,
+            }
+
+            fetch(`/admin/movies/${id}`, requestOptions)
+                .then(response => {
+                    if (response.status !== 200) {
+                        setError("Invalid response code: "+response.status)
+                    }
+                    return response.json()
+                })
+                .then(data => {
+                    //convert data
+                    data.movie.release_date = new Date(data.movie.release_date).toISOString().split("T")[0]
+                    const checks = [];
+
+                    data.genres.forEach(g => {
+                        if (data.movie.genres_array.indexOf(g.id) !== -1) {
+                            checks.push({id: g.id, checked: true, genre: g.genre});
+                        } else {
+                            checks.push({id: g.id, checked: false, genre: g.genre});
+                        }
+                    })
+
+                    setMovie({
+                        ...data.movie,
+                        genres: checks
+                    })
+                })
+                .catch(err => {
+                    console.log(err);
+                })
         }
 
     }, [id, jwtToken, navigate])
@@ -126,6 +165,45 @@ const EditMovie = () => {
         if (errors.length > 0){
             return false;
         }
+
+        // verified => save changes
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Authorization", "Bearer "+jwtToken);
+
+        // assume we are adding new movie
+        let method = "PUT";
+
+        // if we are editing existing movie, change to PATCH
+        if (movie.id > 0) {
+            method = "PATCH";
+        }
+
+        const requestBody = movie;
+        // we need to convert string var from form
+
+        requestBody.release_date = new Date(movie.release_date);
+        requestBody.runtime = parseInt(movie.runtime, 10);
+
+        let requestOptions = {
+            body: JSON.stringify(requestBody),
+            method: method,
+            headers: headers,
+            credentials: "include",
+        }
+
+        fetch(`/admin/movies/${movie.id}`, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.log(data.error); 
+                } else {
+                    navigate("/manage-catalogue")
+                }
+            })
+            .catch(err => {
+                console.log(err);
+            })
     }
 
     const handleChange = (event) => {
@@ -157,6 +235,9 @@ const EditMovie = () => {
         })
     }
 
+    if (error !== null) {
+        return <div>Error: {error.message}</div>
+    } else {
     return(
         <div>
             <h2>Add/ Edit Movie</h2>
@@ -204,6 +285,7 @@ const EditMovie = () => {
                     title={"MPAA Rating"}
                     name={"mpaa_rating"}
                     options={mpaaOptions}
+                    value={movie.mpaa_rating}
                     onChange={handleChange}
                     placeHolder={"Choose..."}
                     errorDiv={hasError("mpaa_rating") ? "text-danger" : "d-none"}
@@ -247,7 +329,7 @@ const EditMovie = () => {
 
             </form>
         </div>
-    )
+    )}
 }
 
 export default EditMovie;
