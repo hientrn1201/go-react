@@ -374,3 +374,18 @@ func (m *PostgresDBRepo) UpdateMovieGenres(id int, genreIDs []int) error {
 	}
 	return nil
 }
+
+func (m *PostgresDBRepo) DeleteMovie(id int) error {
+	//you have a limited time with the context before time out
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `delete from movies where id = $1`
+
+	_, err := m.DB.ExecContext(ctx, stmt, id)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}

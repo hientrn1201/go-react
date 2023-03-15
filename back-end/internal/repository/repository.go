@@ -35,4 +35,7 @@ type DatabaseRepo interface {
 
 	//update movie genres id list
 	UpdateMovieGenres(id int, genreIDs []int) error
+
+	//delete one movie
+	DeleteMovie(id int) error
 }
