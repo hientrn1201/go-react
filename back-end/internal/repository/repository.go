@@ -10,7 +10,7 @@ type DatabaseRepo interface {
 	Connection() *sql.DB
 
 	//return a list of pointers that point to every movie queried from the database
-	AllMovies() ([]*models.Movie, error)
+	AllMovies(genre ...int) ([]*models.Movie, error)
 
 	// get the existing movie by id just for display
 	OneMovie(id int) (*models.Movie, error)
